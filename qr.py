@@ -21,9 +21,10 @@ def main():
     if len(provided_inputs) > 1:
         parser.error("please provide only one input")
     data = provided_inputs[0]
+    
 
     qr = qrcode.QRCode()
-    qr.add_data(args.data)
+    qr.add_data(data)
     qr.make()
     qr.print_ascii()
 
