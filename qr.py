@@ -2,6 +2,7 @@ import qrcode
 import argparse
 from pathlib import Path
 from qrcode.image.svg import SvgPathImage
+import xml.etree.ElementTree as ET
 
 def scale_matrix(matrix, scale):
     scaled = []
@@ -50,6 +51,7 @@ def main():
     parser.add_argument("--error-correction", choices=["L", "M", "Q", "H"], default="M", help="Qr error correction level")
     parser.add_argument("--output", help="save the QR code as a PNG file")
     parser.add_argument("--color", default="black", help="QR foregound color")
+    parser.add_argument("--background", default="white", help="QR background color")
 
     args = parser.parse_args()
     if args.scale < 1:
@@ -83,10 +85,13 @@ def main():
             output_path = Path.home() /"Downloads"/output_path.name
         output_path.parent.mkdir(parents=True, exist_ok=True)
         if output_path.suffix.lower() == ".svg":
-            image = qr.make_image(image_factory=SvgPathImage, fill_color=args.color)
+            image = qr.make_image(image_factory=SvgPathImage, fill_color=args.color, background=args.background)
             image.path.set("fill", args.color)
+            if args.background != "transparent":
+                background = ET.Element("rect", fill=args.background, x="0", y="0", width="100%", height="100%")
+                image._img.insert(0, background)
         else:
-            image = qr.make_image(fill_color=args.color)
+            image = qr.make_image(fill_color=args.color, back_color=args.background)
         image.save(output_path)
         print(f"QR code saved to {output_path}")
     else:
