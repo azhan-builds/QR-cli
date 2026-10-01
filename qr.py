@@ -49,6 +49,7 @@ def main():
     parser.add_argument("--border", type=int, default=4, help= "size of the QR code border")
     parser.add_argument("--error-correction", choices=["L", "M", "Q", "H"], default="M", help="Qr error correction level")
     parser.add_argument("--output", help="save the QR code as a PNG file")
+    parser.add_argument("--color", default="black", help="QR foregound color")
 
     args = parser.parse_args()
     if args.scale < 1:
@@ -82,9 +83,10 @@ def main():
             output_path = Path.home() /"Downloads"/output_path.name
         output_path.parent.mkdir(parents=True, exist_ok=True)
         if output_path.suffix.lower() == ".svg":
-            image = qr.make_image(image_factory=SvgPathImage)
+            image = qr.make_image(image_factory=SvgPathImage, fill_color=args.color)
+            image.path.set("fill", args.color)
         else:
-            image = qr.make_image()
+            image = qr.make_image(fill_color=args.color)
         image.save(output_path)
         print(f"QR code saved to {output_path}")
     else:
