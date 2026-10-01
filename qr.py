@@ -1,5 +1,6 @@
 import qrcode
 import argparse
+from pathlib import Path
 
 def scale_matrix(matrix, scale):
     scaled = []
@@ -46,6 +47,7 @@ def main():
     parser.add_argument("--scale", type=int, default=1, help="size of the terminal QR code")
     parser.add_argument("--border", type=int, default=4, help= "size of the QR code border")
     parser.add_argument("--error-correction", choices=["L", "M", "Q", "H"], default="M", help="Qr error correction level")
+    parser.add_argument("--output", help="save the QR code as a PNG file")
 
     args = parser.parse_args()
     if args.scale < 1:
@@ -69,12 +71,22 @@ def main():
     }
     
 
-    qr = qrcode.QRCode(error_correction=error_correction[args.error_correction], border=args.border)
+    qr = qrcode.QRCode(error_correction=error_correction[args.error_correction], border=args.border, box_size=args.scale)
     qr.add_data(data)
     qr.make()
-    matrix = qr.get_matrix()
-    matrix = scale_matrix(matrix, args.scale)
-    print_qr(matrix, args.style)
+
+    if args.output:
+        output_path = Path(args.output)
+        if not output_path.is_absolute() and output_path.parent == Path("."):
+            output_path = Path.home() /"Downloads"/output_path.name
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        image = qr.make_image()
+        image.save(output_path)
+        print(f"QR code saved to {output_path}")
+    else:
+        matrix = qr.get_matrix()
+        matrix = scale_matrix(matrix, args.scale)
+        print_qr(matrix, args.style)
 
 if __name__ == "__main__":
     main()  
