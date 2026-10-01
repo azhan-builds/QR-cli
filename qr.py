@@ -1,6 +1,7 @@
 import qrcode
 import argparse
 from pathlib import Path
+from qrcode.image.svg import SvgPathImage
 
 def scale_matrix(matrix, scale):
     scaled = []
@@ -80,7 +81,10 @@ def main():
         if not output_path.is_absolute() and output_path.parent == Path("."):
             output_path = Path.home() /"Downloads"/output_path.name
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        image = qr.make_image()
+        if output_path.suffix.lower() == ".svg":
+            image = qr.make_image(image_factory=SvgPathImage)
+        else:
+            image = qr.make_image()
         image.save(output_path)
         print(f"QR code saved to {output_path}")
     else:
