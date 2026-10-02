@@ -3,6 +3,7 @@ import argparse
 from pathlib import Path
 from qrcode.image.svg import SvgPathImage
 import xml.etree.ElementTree as ET
+from PIL import Image, ImageChops, ImageDraw
 
 def scale_matrix(matrix, scale):
     scaled = []
@@ -40,6 +41,38 @@ def print_qr(matrix, style):
                     line += " " 
             print(line)
 
+def add_logo(image, logo_path, background_color):
+    logo = Image.open(logo_path).convert("RGBA")
+    rgb_logo = logo.convert("RGB")
+    background = Image.new("RGB", rgb_logo.size, rgb_logo.getpixel((0, 0)))
+    difference = ImageChops.difference(rgb_logo, background)
+    mask = difference.convert("L")
+    mask = mask.point(lambda value: 255 if value > 15 else 0)
+    bbox = mask.getbbox()
+    if bbox:
+        logo = logo.crop(bbox)
+        mask = mask.crop(bbox)
+        logo.putalpha(mask)
+    image = image.convert("RGBA")
+    logo_size = int(image.width * 0.14)
+    logo.thumbnail((logo_size, logo_size))
+
+    padding = int(logo_size * 0.18)
+    badge_width = logo.width + padding * 2
+    badge_height = logo.height + padding * 2
+    badge = Image.new("RGBA", (badge_width, badge_height), background_color)
+
+    mask = Image.new("L", (badge_width, badge_height), 0)
+    draw = ImageDraw.Draw(mask)
+    radius = int(min(badge_width, badge_height)*0.2)
+    draw.rounded_rectangle((0, 0, badge_width, badge_height), radius=radius, fill=255)
+    badge.putalpha(mask)
+    logo_position = ((badge_width - logo.width)//2, (badge_height - logo.height)//2)
+    badge.paste(logo, logo_position, logo)
+    badge_position = ((image.width - badge.width)//2, (image.height - badge.height)//2)
+    image.paste(badge, badge_position, badge)
+    return image
+
 def main():
     parser = argparse.ArgumentParser(description="Generate QR codes in your terminal"  )
     parser.add_argument("data", nargs="?", help="text or URL to encode into QR code")
@@ -52,12 +85,18 @@ def main():
     parser.add_argument("--output", help="save the QR code as a PNG file")
     parser.add_argument("--color", default="black", help="QR foregound color")
     parser.add_argument("--background", default="white", help="QR background color")
+    parser.add_argument("--logo", help="enter path to the logo image")
 
     args = parser.parse_args()
     if args.scale < 1:
         parser.error("Scale must be at least 1")
     if args.border < 0:
         parser.error("Border cannot be negative")
+
+    if args.logo and not args.output:
+        parser.error("--logo requires --output")
+    if args.logo and not Path(args.logo).is_file():
+        parser.error("logo file does not exist")
     inputs = [args.data, args.text, args.url]
     provided_inputs = [value for value in inputs if value is not None]
 
@@ -66,6 +105,11 @@ def main():
     if len(provided_inputs) > 1:
         parser.error("please provide only one input")
     data = provided_inputs[0]
+
+    if args.logo:
+        args.error_correction = "H"
+        if args.scale == 1:
+            args.scale = 20
 
     error_correction = {
         "L": qrcode.constants.ERROR_CORRECT_L,
@@ -85,13 +129,15 @@ def main():
             output_path = Path.home() /"Downloads"/output_path.name
         output_path.parent.mkdir(parents=True, exist_ok=True)
         if output_path.suffix.lower() == ".svg":
-            image = qr.make_image(image_factory=SvgPathImage, fill_color=args.color, background=args.background)
+            image = qr.make_image(image_factory=SvgPathImage, fill_color=args.color)
             image.path.set("fill", args.color)
             if args.background != "transparent":
                 background = ET.Element("rect", fill=args.background, x="0", y="0", width="100%", height="100%")
                 image._img.insert(0, background)
         else:
             image = qr.make_image(fill_color=args.color, back_color=args.background)
+            if args.logo:
+                image = add_logo(image, args.logo, args.background)
         image.save(output_path)
         print(f"QR code saved to {output_path}")
     else:
