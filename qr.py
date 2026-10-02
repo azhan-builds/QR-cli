@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 from PIL import Image, ImageChops, ImageDraw
 import base64
 from io import BytesIO
+import sys
 
 def scale_matrix(matrix, scale):
     scaled = []
@@ -141,6 +142,11 @@ def main():
         parser.error("logo file does not exist")
     inputs = [args.data, args.text, args.url]
     provided_inputs = [value for value in inputs if value is not None]
+
+    if len(provided_inputs) == 0 and not sys.stdin.isatty():
+        stdin_data = sys.stdin.read().strip()
+        if stdin_data:
+            provided_inputs.append(stdin_data)
 
     if len(provided_inputs) == 0:
         parser.error("please provide text or a URL")
