@@ -129,6 +129,7 @@ def main():
     parser.add_argument("--color", default="black", help="QR foregound color")
     parser.add_argument("--background", default="white", help="QR background color")
     parser.add_argument("--logo", help="enter path to the logo image")
+    parser.add_argument("--file", help="read multiple QR inputs from a text file")
 
     args = parser.parse_args()
     if args.scale < 1:
@@ -140,7 +141,7 @@ def main():
         parser.error("--logo requires --output")
     if args.logo and not Path(args.logo).is_file():
         parser.error("logo file does not exist")
-    inputs = [args.data, args.text, args.url]
+    inputs = [args.data, args.text, args.url, args.file]
     provided_inputs = [value for value in inputs if value is not None]
 
     if len(provided_inputs) == 0 and not sys.stdin.isatty():
@@ -154,6 +155,16 @@ def main():
         parser.error("please provide only one input")
     data = provided_inputs[0]
 
+    bulk_data = []
+    if args.file:
+        file_path = Path(args.file)
+        if not file_path.is_file():
+            parser.error("input file does not exist")
+        with open(file_path, "r", encoding="utf-8") as file:
+            bulk_data = [line.strip() for line in file if line.strip()]
+        if not bulk_data:
+            parser.error("input file is empty")
+
     if args.logo:
         args.error_correction = "H"
         if args.scale == 1:
@@ -165,6 +176,22 @@ def main():
         "Q": qrcode.constants.ERROR_CORRECT_Q,
         "H": qrcode.constants.ERROR_CORRECT_H
     }
+
+    if args.file:
+        output_directory = Path(args.output) if args.output else Path.home()/"Downloads"/"qr-codes"
+        output_directory.mkdir(parents=True, exist_ok=True)
+        image_scale = max(args.scale, 10)
+        for index, item in enumerate(bulk_data, start=1):
+            qr = qrcode.QRCode(error_correction = error_correction[args.error_correction], border=args.border, box_size=image_scale)
+            qr.add_data(item)
+            qr.make()
+            output_path = output_directory / f"qr-{index}.png"
+            image = qr.make_image(fill_color=args.color, back_color=args.background)
+            if args.logo:
+                image=add_logo(image, args.logo, args.background)
+            image.save(output_path)
+            print(f"QR code saved to {output_path}")
+        return
     
 
     qr = qrcode.QRCode(error_correction=error_correction[args.error_correction], border=args.border, box_size=args.scale)
