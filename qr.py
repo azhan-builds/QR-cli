@@ -7,6 +7,28 @@ from PIL import Image, ImageChops, ImageDraw
 import base64
 from io import BytesIO
 import sys
+import re
+from urllib.parse import urlparse
+
+def make_filename(data, used_names):
+    if data.startswith(("http://", "https://")):
+        parsed_url = urlparse(data)
+        name = parsed_url.netloc + parsed_url.path
+    else:
+        name = data
+    name = name.strip().replace(" ", "-")
+    name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "-", name)
+    name = name.strip(" .-")
+    name = name[:80].rstrip(" .-")
+    if not name:
+        name = "qr-code"
+    original_name = name
+    counter = 2
+    while name.lower() in used_names:
+        name = f"{original_name}-{counter}"
+        counter += 1
+    used_names.add(name.lower())
+    return name + ".png"
 
 def scale_matrix(matrix, scale):
     scaled = []
@@ -181,16 +203,18 @@ def main():
         output_directory = Path(args.output) if args.output else Path.home()/"Downloads"/"qr-codes"
         output_directory.mkdir(parents=True, exist_ok=True)
         image_scale = max(args.scale, 10)
-        for index, item in enumerate(bulk_data, start=1):
-            qr = qrcode.QRCode(error_correction = error_correction[args.error_correction], border=args.border, box_size=image_scale)
+        used_names = set()
+        for item in bulk_data:
+            qr = qrcode.QRCode(error_correction=error_correction[args.error_correction], border=args.border, box_size=image_scale)
             qr.add_data(item)
             qr.make()
-            output_path = output_directory / f"qr-{index}.png"
+            filename = make_filename(item, used_names)
+            output_path = output_directory/filename
             image = qr.make_image(fill_color=args.color, back_color=args.background)
             if args.logo:
-                image=add_logo(image, args.logo, args.background)
+                image = add_logo(image, args.logo, args.background)
             image.save(output_path)
-            print(f"QR code saved to {output_path}")
+            print(f"Qr code saved to {output_path}")
         return
     
 
