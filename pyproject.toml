@@ -1,0 +1,23 @@
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qr-cli"
+version = "0.1.0"
+description = "A command-line QR code generator written in Python"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = [
+    "qrcode[pil]>=8.0",
+    "Pillow>=10.0",
+]
+
+[project.scripts]
+qr = "qr:main"
+
+[tool.setuptools]
+py-modules = ["qr"]
