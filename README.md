@@ -15,18 +15,42 @@ I made this project so i can understand and learn more about Python, cmd tools, 
 -Add a logo
 -bulk qr generation from a text file
 
-## Getting Started
-To begin with, you will need python and pip installed
+## Installation
 
-Clone the repository:
-`git clone https://github.com/azhan-builds/QR-cli`
-`cd QR-cli`
+Install QR-cli using pip:
 
-Intstall the libraries
-`python -m pip install "qrcode[pil]"`
+```bash
+python -m pip install qrcli-toolkit
+```
 
-You should be then able to run the script directly
-`python qr.py "Hello, world!"`
+Once installed, run QR-cli directly from your terminal:
+
+```bash
+qr --help
+```
+
+Generate your first QR code:
+
+```bash
+qr "Hello, world!"
+```
+
+To upgrade QR-cli:
+
+```bash
+python -m pip install --upgrade qrcli-toolkit
+```
+
+### Running from source
+
+If you want to explore or modify the code, clone the repository:
+
+```bash
+git clone https://github.com/azhan-builds/QR-cli.git
+cd QR-cli
+python -m pip install "qrcode[pil]"
+python qr.py "Hello, world!"
+```
 
 ## Usage
 ### Generate a qr code
