@@ -4,6 +4,9 @@ This tool is built with python. It let's you create QR codes and save them as im
 
 I made this project so i can understand and learn more about Python, cmd tools, and more. 
 
+## Preview
+![QR-cli generating a QR code](https://user-cdn.hackclub-assets.com/01a13d3c-bcaa-772c-87e8-5d407ff80dc7/1.png)
+
 ## Features
 -Generate qr code from text and urls
 -Display qr codes in the terminal
